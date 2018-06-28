@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <link rel="stylesheet" type="text/css" href="main.css">
+
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+
+</head>
+
+<body>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+
+    <script>
+
+        if (typeof web3 !== 'undefined') {
+            web3 = new Web3(web3.currentProvider);
+        } else {
+            web3 = new Web3(new Web3.providers.HttpProvider("https://ropsten.infura.io/h6a92a1ApB4XVikUrTOZ"));
+        }
+
+        web3.eth.defaultAccount = web3.eth.accounts[0];
+
+
+        var OracleService = web3.eth.contract([
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "_apiUrl",
+                        "type": "string"
+                    },
+                    {
+                        "name": "_pathToData",
+                        "type": "string"
+                    },
+                    {
+                        "name": "_sender",
+                        "type": "address"
+                    }
+                ],
+                "name": "api_call",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "apiUrl",
+                        "type": "string"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "pathToData",
+                        "type": "string"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "caller",
+                        "type": "address"
+                    }
+                ],
+                "name": "API_call",
+                "type": "event"
+            }
+        ]);
+        var OracleClientABI = [
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "_data",
+                        "type": "string"
+                    }
+                ],
+                "name": "__callback",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+
+        var oracleServiceContract = OracleService.at("0x09826380ce7fd6fe77ec8651cb60c5beb7be972f");
+
+        Object.byString = function (o, s) {
+            s = s.replace(/\[(\w+)\]/g, '.$1');
+            s = s.replace(/^\./, '');
+            var a = s.split('.');
+            for (var i = 0, n = a.length; i < n; ++i) {
+                var k = a[i];
+                if (k in o) {
+                    o = o[k];
+                } else {
+                    return;
+                }
+            }
+            return o;
+        }
+
+        var apiCallEvent = oracleServiceContract.API_call();
+        apiCallEvent.watch(function (error, result) {
+            if (!error) {
+                let clientContractAddress = result.args.caller;
+                let pathToData = result.args.pathToData;
+                fetch(result.args.apiUrl)
+                    .then((resp) => resp.json())
+                    .then(function (data) {
+                        let responseData = Object.byString(data, pathToData);
+                        var oracleClientContract = web3.eth.contract(OracleClientABI).at(clientContractAddress);
+                        oracleClientContract.__callback(responseData, function (err, res) {
+                            console.log(res);
+                        });
+                    });
+            } else {
+                console.log(error);
+            }
+        });
+
+        //WORKING EXAMPLE: call api_call("http://our-rent-api.herokuapp.com/api/objects", "[0].description");
+        //"https://api.coinmarketcap.com/v1/ticker/ethereum/", "[0].price_usd"
+
+    </script>
+</body>
+
+</html>
