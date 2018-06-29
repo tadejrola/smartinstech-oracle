@@ -129,7 +129,8 @@
                     let responseData = Object.byString(data, pathToData);
 
                     web3.eth.getTransactionCount(myAddress, function (err, nonce) {
-                        var data = new web3.eth.Contract(OracleClientABI, clientContractAddress).__callback.getData(responseData);
+                        var data = new web3.eth.Contract(OracleClientABI, clientContractAddress);
+                        console.log(data);
 
                         var tx = new ethereumjs.Tx({
                             nonce: nonce,
@@ -137,7 +138,7 @@
                             gasLimit: 1000000,
                             to: clientContractAddress,
                             value: 0,
-                            data: data,
+                            data: data.methods.__callback(responseData)
                         });
                         tx.sign(ethereumjs.Buffer.Buffer.from(privateKey, 'hex'));
 
