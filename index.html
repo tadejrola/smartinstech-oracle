@@ -13,7 +13,7 @@
 
 <body>
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ethereumjs-tx@1.3.5/es5/index.min.js"></script>
+    <script src="https://cdn.rawgit.com/ethereumjs/browser-builds/2fb69a714afe092b06645286f14b94f41e5c062c/dist/ethereumjs-tx.js"></script>
     <script>
 
         if (typeof web3 !== 'undefined') {
@@ -118,9 +118,9 @@
                         let responseData = Object.byString(data, pathToData);
                         var oracleClientContract = web3.eth.contract(OracleClientABI).at(clientContractAddress);
 
-                        web3.eth.getTranscationCount(myAddress, function (err, nonce) {
+                        web3.eth.getTransactionCount(myAddress, function (err, nonce) {
                             let data = oracleClientContract.__callback.getData(responseData);
-                            var tx = new ethereumjs.Tx({
+                            var tx = new EthJS.Tx({
                                 nonce: nonce,
                                 gasPrice: web3.toHex(web3.toWei("35", "gwei")),
                                 gasLimit: 1000000,
@@ -129,16 +129,12 @@
                                 data: data
 
                             });
-                            tx.sign(ethereumjs.Buffer.Buffer.from(privateKey, "hex"));
+                            tx.sign(EthJS.Buffer.Buffer.from(privateKey, "hex"));
                             var raw = "0x" + tx.serialize().toString("hex");
                             web3.eth.sendRawTransaction(raw, function (err, txHash) {
                                 console.log(txHash);
                             });
                         })
-
-                        // oracleClientContract.__callback(responseData, function (err, res) {
-                        //     console.log(res);
-                        // });
                     });
             } else {
                 console.log(error);
