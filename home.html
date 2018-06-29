@@ -26,7 +26,7 @@
             console.log("2");
 
         } */
-            
+
         const web3 = new Web3(new Web3.providers.WebsocketProvider('wss://ropsten.infura.io/ws'));
 
         // web3.eth.defaultAccount = web3.eth.accounts[0];
@@ -115,40 +115,67 @@
 
         let myAddress = "0x9c21daBc470B1d10AFDBd076C24c70E778A3c5B1";
         let privateKey = "0441829a504f5e1d4194f7494feb6eb2d5819dc0c3204f9fca573aaa8e2a89df";
-        
-        OracleService.events.API_call({fromBlock: 0}, function(err, event) {
+
+        OracleService.events.API_call({ fromBlock: 0 }, function (err, event) {
             console.log(err);
         }).on('data', (log) => {
             console.log(log);
-                let clientContractAddress = log.returnValues.caller;
-                let pathToData = log.returnValues.pathToData;
-                fetch(log.returnValues.apiUrl)
-                    .then((resp) => resp.json())
-                    .then(function (data) {
-                        let responseData = Object.byString(data, pathToData);
-                        var oracleClientContract = new web3.eth.Contract(OracleClientABI, clientContractAddress);
-                        let encodedABI = oracleClientContract.methods.__callback(responseData).encodeABI();
-                        let nonce = web3.eth.getTransactionCount(myAddress);
-                        let tx = {from: myAddress,
-                        nonce: nonce,
-                        gasPrice: web3.utils.toHex(web3.utils.toWei('35', 'gwei')),
-                        gasLimit: 2000000,
-                        to: clientContractAddress,
-                        data: encodedABI};
-                        let transaction = new ethereumjs.Tx(tx.toString('hex'));
-                        transaction.sign(privateKey);
-                        let serializedTx = transaction.serialize().toString('hex');
-                        web3.eth.sendSignedTransaction('0x' + serializedTx, function(err, res) {
-                            console.log(res);
-                        });
-/*                         let tran = web3.eth.accounts.signTransaction(tx, privateKey).then((res) => {
-                            web3.eth.sendSignedTransaction(res.rawTransaction).on('receipt', console.log);
-                        }); */
+            let clientContractAddress = log.returnValues.caller;
+            let pathToData = log.returnValues.pathToData;
+            fetch(log.returnValues.apiUrl)
+                .then((resp) => resp.json())
+                .then(function (data) {
+                    let responseData = Object.byString(data, pathToData);
 
+                    web3.eth.getTransactionCount(myAddress, function (err, nonce) {
+                        var data = web3.eth.contract(OracleClientABI).at(clientContractAddress).__callback.getData(responseData);
+
+                        var tx = new ethereumjs.Tx({
+                            nonce: nonce,
+                            gasPrice: web3.toHex(web3.toWei('20', 'gwei')),
+                            gasLimit: 1000000,
+                            to: clientContractAddress,
+                            value: 0,
+                            data: data,
+                        });
+                        tx.sign(ethereumjs.Buffer.Buffer.from(privateKey, 'hex'));
+
+                        var raw = '0x' + tx.serialize().toString('hex');
+                        web3.eth.sendRawTransaction(raw, function (err, transactionHash) {
+                            console.log(transactionHash);
+                        });
                     });
 
+
+
+
+
+
+                    // var oracleClientContract = new web3.eth.Contract(OracleClientABI, clientContractAddress);
+                    // let encodedABI = oracleClientContract.methods.__callback(responseData).encodeABI();
+                    // let nonce = web3.eth.getTransactionCount(myAddress);
+                    // let tx = {
+                    //     from: myAddress,
+                    //     nonce: nonce,
+                    //     gasPrice: web3.utils.toHex(web3.utils.toWei('35', 'gwei')),
+                    //     gasLimit: 2000000,
+                    //     to: clientContractAddress,
+                    //     data: encodedABI
+                    // };
+                    // let transaction = new ethereumjs.tx(tx.toString('hex'));
+                    // transaction.sign(privateKey);
+                    // let serializedTx = transaction.serialize().toString('hex');
+                    // web3.eth.sendSignedTransaction('0x' + serializedTx, function (err, res) {
+                    //     console.log(res);
+                    // });
+                    /*                         let tran = web3.eth.accounts.signTransaction(tx, privateKey).then((res) => {
+                                                web3.eth.sendSignedTransaction(res.rawTransaction).on('receipt', console.log);
+                                            }); */
+
+                });
+
         })
-        
+
         // var apiCallEvent = oracleServiceContract.API_call();
         // apiCallEvent.watch(function (error, result) {
         //     if (!error) {
