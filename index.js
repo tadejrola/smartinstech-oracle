@@ -1,6 +1,7 @@
 const Web3 = require('web3');
 const EthereumTx = require('ethereumjs-tx')
 const fetch = require('node-fetch');
+const http = require('http');
 
 const web3 = new Web3(new Web3.providers.WebsocketProvider('wss://ropsten.infura.io/ws'));
 console.log(web3.version);
@@ -83,8 +84,6 @@ Object.byString = function (o, s) {
     }
     return o;
 }
-
-console.log(1);
 
 let myAddress1 = "0x9c21daBc470B1d10AFDBd076C24c70E778A3c5B1";
 const privateKey1 = '0441829a504f5e1d4194f7494feb6eb2d5819dc0c3204f9fca573aaa8e2a89df';
@@ -189,6 +188,7 @@ function signTranscaction(data, address, clientContractAddress, pathToData) {
         });
     });
 }
+http.createServer(function (req, res) {
 
-console.log(4);
+}).listen(process.env.port || 3000);
 
