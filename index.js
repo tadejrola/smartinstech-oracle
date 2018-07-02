@@ -132,9 +132,8 @@ let address5 = {
 }
 
 var addresses = [];
-
-addresses.push(address2);
 addresses.push(address1);
+addresses.push(address2);
 addresses.push(address3);
 addresses.push(address4);
 addresses.push(address5);
