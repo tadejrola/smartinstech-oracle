@@ -11,6 +11,10 @@ var OracleService = new web3.eth.Contract([
         "constant": false,
         "inputs": [
             {
+                "name": "_baggageId",
+                "type": "uint256"
+            },
+            {
                 "name": "_apiUrl",
                 "type": "string"
             },
@@ -34,6 +38,11 @@ var OracleService = new web3.eth.Contract([
         "inputs": [
             {
                 "indexed": false,
+                "name": "baggageId",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
                 "name": "apiUrl",
                 "type": "string"
             },
@@ -51,7 +60,7 @@ var OracleService = new web3.eth.Contract([
         "name": "API_call",
         "type": "event"
     }
-], "0x09826380ce7fd6fe77ec8651cb60c5beb7be972f");
+], "0x6cb0965e25f6779778479ae398ede3b5755cb3e1");
 
 var OracleClientABI = [
     {
@@ -60,6 +69,10 @@ var OracleClientABI = [
             {
                 "name": "_data",
                 "type": "string"
+            },
+            {
+                "name": "_baggageId",
+                "type": "uint256"
             }
         ],
         "name": "__callback",
@@ -136,12 +149,15 @@ addresses.push(address2);
 addresses.push(address3);
 addresses.push(address4);
 addresses.push(address5);
-
+let baggageId = 0;
 OracleService.events.API_call({ fromBlock: 0 }, function (err, event) {
 }).on('data', (log) => {
     let clientContractAddress = log.returnValues.caller;
     let pathToData = log.returnValues.pathToData;
-    fetch(log.returnValues.apiUrl)
+    let apiUrl = log.returnValues.apiUrl;
+    baggageId = log.returnValues.baggageId;
+    let apiToCall = apiUrl + baggageId;
+    fetch(apiToCall)
         .then((resp) => resp.json())
         .then(function (data) {
             var acc = findAvailableAddress();
@@ -158,13 +174,15 @@ function findAvailableAddress() {
 
 function signTranscaction(data, address, clientContractAddress, pathToData) {
     let responseData = Object.byString(data, pathToData);
+
+
     var oracleClientContract = new web3.eth.Contract(OracleClientABI, clientContractAddress);
-    let encodedABI = oracleClientContract.methods.__callback(responseData).encodeABI();
+    let encodedABI = oracleClientContract.methods.__callback(responseData, baggageId).encodeABI();
     web3.eth.getTransactionCount(address.address).then((data) => {
         let tx = {
             from: address.address,
             nonce: data,
-            gasPrice: web3.utils.toHex(web3.utils.toWei('55', 'gwei')),
+            gasPrice: web3.utils.toHex(web3.utils.toWei('10', 'gwei')),
             gasLimit: 200000,
             to: clientContractAddress,
             data: encodedABI
